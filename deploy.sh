@@ -71,10 +71,10 @@ current_script_version="" # To store the version in the script itself
 
 
 # Optional when build project in host before build docker
-rm -rf .next
-git pull
-npm install
-npm run build
+# rm -rf .next
+# git pull
+# npm install
+# npm run build
 
 if [[ "$BRANCH" == "main" ]]; then
     current_script_version="$version"
