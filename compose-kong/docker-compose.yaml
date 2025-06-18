@@ -1,0 +1,99 @@
+version: '3.4'
+services:
+  kong-database:
+    image: postgres:9.6
+    restart: always
+    volumes:
+      - /root/kong/postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=kong
+      - POSTGRES_PASSWORD=kong
+      - POSTGRES_DB=kong
+      
+    healthcheck:
+      test: "pg_isready -U kong && psql -d kong -U kong -c \"SELECT 1=1\""
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kong-migration:
+    image: kong:3.5.0
+    restart: always
+    depends_on:
+      - kong-database
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=kong-database
+      # - KONG_PG_USER=kong
+      - KONG_PG_PASSWORD=kong
+      #- KONG_LUA_PACKAGE_PATH=./?.lua;./?/init.lua
+    #command: sh -c "kong migrations bootstrap && touch migrations_run && sleep 30"
+    command: sh -c "kong migrations bootstrap && kong migrations up && kong migrations finish && sleep 30"
+    #healthcheck:
+    #  test: "if [[ -f migrations_run ]] ; then exit 0; else exit 1; fi"
+    #  interval: 10s
+    #  timeout: 5s
+    #  retries: 5
+
+  kong:
+    image: kong:3.5.0
+    restart: always
+    depends_on:
+      - kong-migration
+    healthcheck:
+      test: "kong health"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - /root/kong/kong-config:/opt/kong
+    environment:
+      - KONG_DECLARATIVE_CONFIG=/opt/kong/kong.yaml
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=kong-database
+      # - KONG_PG_USER=kong
+      - KONG_PG_PASSWORD=kong
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_PROXY_LISTEN=0.0.0.0:8000, 0.0.0.0:8443 ssl
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl
+      #- KONG_PLUGINS=basic-auth, key-auth, rate-limiting, prometheus, proxy-cache, oauth2
+    ports:
+      - 8003:8001
+      - 8444:8444
+      - 80:8000
+      - 443:8443
+    deploy:    
+      mode: replicated
+      replicas: 3
+    #   resources:
+    #       limits:
+    #         cpus: '0.5'
+    #         memory: 1024M
+    #       reservations:
+    #         cpus: '0.25'
+    #         memory: 500M
+
+  mongo:
+    image: mongo:5.0.0
+    volumes:
+      - /root/kong/mongo_data:/data/db
+
+  konga:
+    image: pantsel/konga
+    depends_on:
+      - kong
+      - mongo
+    ports:
+      - 1337:1337
+    environment:
+      - DB_ADAPTER=mongo
+      - DB_HOST=mongo
+      - DB_DATABASE=konga
+      - NODE_ENV=production
+
+volumes:
+  postgres_data:
+  mongo_data:
