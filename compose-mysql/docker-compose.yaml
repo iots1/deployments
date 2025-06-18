@@ -1,0 +1,26 @@
+version: '3.3'
+services:
+  db-mysql-test:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'example_database'
+      MYSQL_USER: 'example_user'
+      MYSQL_PASSWORD: 'example_password'
+      MYSQL_ROOT_PASSWORD: 'example_root_password'
+    ports:
+      - '3306:3306'
+    volumes:
+      - /root/mysql-db:/var/lib/mysql
+    deploy:    
+      mode: replicated
+      replicas: 1
+      resources:
+          limits:
+            cpus: '1'
+            memory: 1024M
+          reservations:
+            cpus: '0.25'
+            memory: 300M
+volumes:
+  mysql-db:

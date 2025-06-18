@@ -1,0 +1,32 @@
+version: "3.3"
+
+services:
+  db-wp-mysite:
+    image: mysql:5.7
+    volumes:
+      - /root/wordpress-mysite/db_data_mysite:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: somewordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+
+  wp-mysite:
+    depends_on:
+      - db-wp-mysite
+    image: wordpress:php8.2-apache
+    volumes:
+      - /root/wordpress-mysite/wordpress_data_mysite:/var/www/html
+      - /root/wordpress-mysite/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini 
+    ports:
+      - "5003:80"
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db-wp-mysite
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+volumes:
+  db_data_buddypos: {}
+  wordpress_data_buddypos: {}

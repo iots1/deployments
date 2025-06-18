@@ -1,0 +1,21 @@
+version: '3.1'
+services:
+  service-mongodb:
+    image: mongo:7.0.14
+    restart: always
+    volumes:
+      - /root/mongodb/db_data:/data/db
+      - /root/mongodb/log:/var/log/mongodb/
+      - /root/mongodump:/backup
+    ports:
+      - 27035:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example_password
+      MONGO_INITDB_DATABASE: example_db
+      MONGO_INITDB_USERNAME: example_user
+      MONGO_INITDB_PASS: example_password
+
+volumes:
+  db_data:
+    external: true
